@@ -1,5 +1,6 @@
 import java.io.IOException;
-import java.util.Arrays;
+
+import org.perfectbits.ghost.model.Game;
 
 /**
  * User: luke
@@ -8,7 +9,9 @@ import java.util.Arrays;
  */
 public class EntryPoint {
     public static void main(String[] args) throws IOException {
-        DoSomething doSomething = new DoSomething();
-        doSomething.execute(Arrays.asList("test123", "test2", "test31238"));
+//        DoSomething doSomething = new DoSomething();
+//        doSomething.execute(Arrays.asList("test123", "test2", "test31238"));
+    	Game g = new Game();
+    	g.start();
     }
 }
