@@ -16,15 +16,16 @@ import com.jme3.scene.Mesh;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
 import com.jme3.scene.debug.Arrow;
+import com.jme3.scene.debug.Grid;
 import com.jme3.scene.shape.Box;
 import com.jme3.texture.Texture;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
+import org.perfectbits.ghost.model.Game;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * test
@@ -33,18 +34,21 @@ import java.util.logging.Logger;
  */
 public class Main extends SimpleApplication {
 
-    private static final Logger log = Logger.getLogger(Main.class.getName());
+    Logger log = LoggerFactory.getLogger(Main.class);
     public static Vector3f startPos = new Vector3f(2, 2, -20);
     public static float VILLAGE_CARD_SIZE = 1.5f;
     public static final String MAPPING_BOARD_1 = "Board 1";
     public static final String MAPPING_BOARD_2 = "Board 2";
     public static final String MAPPING_BOARD_3 = "Board 3";
     public static final String MAPPING_BOARD_4 = "Board 4";
-
+    public static final String MAPPING_MAIN_MENU = "Main menu";
     private CameraMover cameraMover;
+    private GUIScreenWriter textWriter;
+    private Game game;
 
     public Main() {
         showSettings = false;
+        configLoggers();
     }
 
     public static void main(String[] args) {
@@ -58,6 +62,8 @@ public class Main extends SimpleApplication {
 
     @Override
     public void simpleInitApp() {
+        this.game = new Game();
+        settings.setVSync(true);
 
         Box b = new Box(1, 1, 1);
         Geometry geom = new Geometry("Box", b);
@@ -70,10 +76,11 @@ public class Main extends SimpleApplication {
         Geometry cardGeom = buildCard();
 
         attachCoordinateAxes(Vector3f.ZERO);
+        attachGrid(Vector3f.UNIT_Y, 1000, ColorRGBA.Blue);
 //        rootNode.attachChild(cardGeom);
         flyCam.setEnabled(false);
-        
-        
+
+
         placeGameArtifacts(rootNode);
         this.cameraMover = new CameraMover(cam, getGameboardCenter());
         cam.setLocation(cam.getLocation().add(-2, -7, -28));
@@ -82,13 +89,18 @@ public class Main extends SimpleApplication {
         inputManager.addMapping(MAPPING_BOARD_2, TRIGGER_BOARD2);
         inputManager.addMapping(MAPPING_BOARD_3, TRIGGER_BOARD3);
         inputManager.addMapping(MAPPING_BOARD_4, TRIGGER_BOARD4);
+        inputManager.addMapping(MAPPING_MAIN_MENU, TRIGGER_MAIN_MENU);
         inputManager.addListener(actionListener, new String[]{
             MAPPING_BOARD_1, MAPPING_BOARD_2,
-            MAPPING_BOARD_3, MAPPING_BOARD_4});
+            MAPPING_BOARD_3, MAPPING_BOARD_4, MAPPING_MAIN_MENU});
+
+        this.textWriter = new GUIScreenWriter(guiNode, guiFont);
+        
+        
     }
     private ActionListener actionListener = new ActionListener() {
         public void onAction(String name, boolean isPressed, float tpf) {
-            log.log(Level.WARNING, "Action happened " + name);
+            log.debug("Action happened {}", name);
             int plNo = 0;
             if (name.equals(MAPPING_BOARD_1)) {
                 plNo = 1;
@@ -98,7 +110,10 @@ public class Main extends SimpleApplication {
                 plNo = 3;
             } else if (name.equals(MAPPING_BOARD_4)) {
                 plNo = 4;
+            } else if (name.equals(MAPPING_MAIN_MENU)) {
+                displayMainMenu();
             }
+
 
             lookToBoard(plNo);
             cam.lookAt(getGameboardCenter(), Vector3f.UNIT_XYZ);
@@ -124,12 +139,18 @@ public class Main extends SimpleApplication {
             }
             cam.setLocation(l);
         }
+
+        private void displayMainMenu() {
+            if (game.isStarted() == false)
+                game.start();
+            textWriter.write("M pressed");
+        }
     };
 
     @Override
     public void simpleUpdate(float tpf) {
         moveCameraAroundBoard(tpf);
-        
+
     }
 
     @Override
@@ -173,7 +194,7 @@ public class Main extends SimpleApplication {
         float y = -(row * height + spacing);
         float z = 0;
 
-        log.log(Level.WARNING, "Village at [{0}] [{1}] [{2}]", new Object[]{x, y, z});
+        log.debug("Village at [{}] [{}] [{}]", new Object[]{x, y, z});
 
         cardGeom.setLocalTranslation(lt.add(new Vector3f(x, y, z)));
 
@@ -214,7 +235,7 @@ public class Main extends SimpleApplication {
             float spacing = 0;
             // CCW
             int rotationDeg = 180 + (360 - 90 * (i - 1));
-            log.log(Level.WARNING, "Rotation PlayerCard [{0}] [{1}]", new Object[]{i, rotationDeg});
+            log.debug("Rotation PlayerCard [{}] [{}]", new Object[]{i, rotationDeg});
 
             if (i == 1) {
                 cardGeom.move(VILLAGE_CARD_SIZE, height, 0);
@@ -274,6 +295,7 @@ public class Main extends SimpleApplication {
     private final static Trigger TRIGGER_BOARD2 = new KeyTrigger(KeyInput.KEY_NUMPAD2);
     private final static Trigger TRIGGER_BOARD3 = new KeyTrigger(KeyInput.KEY_NUMPAD3);
     private final static Trigger TRIGGER_BOARD4 = new KeyTrigger(KeyInput.KEY_NUMPAD4);
+    private final static Trigger TRIGGER_MAIN_MENU = new KeyTrigger(KeyInput.KEY_M);
 
     private void placePlayer(Node rootNode) {
 
@@ -285,7 +307,22 @@ public class Main extends SimpleApplication {
         rootNode.attachChild(model);
     }
 
+    private Geometry attachGrid(Vector3f pos, int size, ColorRGBA color) {
+        Geometry g = new Geometry("wireframe grid", new Grid(size, size, 1));
+        Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        mat.getAdditionalRenderState().setWireframe(true);
+        mat.setColor("Color", color);
+        g.setMaterial(mat);
+        g.center().move(pos);
+        rootNode.attachChild(g);
+        return g;
+    }
+
     private void moveCameraAroundBoard(float tpf) {
         cameraMover.move(tpf);
+    }
+
+    private void configLoggers() {
+         System.setProperty("java.util.logging.config.file", "logging.properties");
     }
 }

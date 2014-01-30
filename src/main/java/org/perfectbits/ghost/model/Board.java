@@ -93,6 +93,9 @@ public class Board {
 	public Player getPlayer() {
 		return player;
 	}
+        public void setPlayer(Player p) {
+		this.player = p;
+	}
 
 	
 }

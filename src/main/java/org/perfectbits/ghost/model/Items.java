@@ -9,7 +9,7 @@ import java.util.Map;
  *
  */
 public class Items {
-	private Map<Color, Integer> taoTokens = new  HashMap<>();
+	private Map<Color, Integer> taoTokens = new  HashMap<Color, Integer>();
 	private Integer yinYangTokens = 0;
 	private Integer neutralPowerTokens = 0;
 	private Integer buddas = 0;
