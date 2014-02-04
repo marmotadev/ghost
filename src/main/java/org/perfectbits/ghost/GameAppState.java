@@ -56,6 +56,7 @@ public class GameAppState extends AbstractAppState {
     public static final String MAPPING_BOARD_4 = "Board 4";
     public static final String MAPPING_MAIN_MENU = "Main menu";
     public static final String MAPPING_START_GAME = "Start game";
+    public static final String MAPPING_QUIT_GAME = "Quit game";
     
     private final static Trigger TRIGGER_BOARD1 = new KeyTrigger(KeyInput.KEY_NUMPAD1);
     private final static Trigger TRIGGER_BOARD2 = new KeyTrigger(KeyInput.KEY_NUMPAD2);
@@ -63,6 +64,7 @@ public class GameAppState extends AbstractAppState {
     private final static Trigger TRIGGER_BOARD4 = new KeyTrigger(KeyInput.KEY_NUMPAD4);
     private final static Trigger TRIGGER_MAIN_MENU = new KeyTrigger(KeyInput.KEY_M);
     private final static Trigger TRIGGER_START_GAME = new KeyTrigger(KeyInput.KEY_S);
+    private final static Trigger TRIGGER_QUIT_GAME = new KeyTrigger(KeyInput.KEY_Q);
 
     private boolean moveCameraAround = false;
     private GhostsApplication app;
@@ -94,7 +96,7 @@ public class GameAppState extends AbstractAppState {
         this.settings = this.app.getSettings();
         this.guiNode = this.app.getGuiNode();
         this.guiFont = this.app.getGuiFont();
-        this.textWriter = new GUIScreenWriter(guiNode, guiFont);
+        this.textWriter = new GUIScreenWriter(guiNode, guiFont, settings);
         this.stateManager = this.app.getStateManager();
 
         this.cameraMover = new CameraMover(cam, getGameboardCenter(), startPos);
@@ -103,39 +105,40 @@ public class GameAppState extends AbstractAppState {
         cam.setLocation(cam.getLocation().add(-3, -7, -23));
         cam.lookAt(getGameboardCenter(), Vector3f.UNIT_XYZ);
         placeGameArtifacts(rootNode);
-        registerKeyboardMappings();
 
+        registerKeyboardMappings();
+        
         //game
         this.game = new Game();
         this.game.setEventListener(new GameEventListenerImpl(game) {
             public void ghostEnters(GhostCard next) {
                 ghostImage.display();
-                textWriter.write("Be afraid! New ghost arrives: " + next.getName());
+                textWriter.writeToBuf("Be afraid! New ghost arrives: " + next.getName());
             }
 
             public void lostGame() {
-                textWriter.write("Game Over");
+                textWriter.writeToBuf("Game Over");
             }
 
             public void playerStartsTurn(int i) {
-                textWriter.write("Player " + i + " starts turn" );
+                textWriter.writeToBuf("Player " + i + " starts turn" );
 //                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
             }
 
             public void villageBecomesHaunted(VillageTile villageTile, int facingTileNo) {
-                textWriter.write("Village " + villageTile + " becomes haunted" );
+                textWriter.writeToBuf("Village " + villageTile + " becomes haunted" );
             }
 
             public void ghostMoves(GhostCard.GhostPosition pos, GhostCard.GhostPosition next) {
-                textWriter.write("Ghost moves from " + pos + " to " + next);
+                textWriter.writeToBuf("Ghost moves from " + pos + " to " + next);
             }
 
             public void exorcismChoiseAvailable(Board board, Player player) {
-                textWriter.write("Choose which ghost to exorcise");
+                textWriter.writeToBuf("Choose which ghost to exorcise");
             }
 
             public void playCanAskForHelp(Player player, VillageTile village) {
-                textWriter.write("Player can ask for help");
+                textWriter.writeToBuf("Player can ask for help");
             }
 
             public void playerCanChooseToMove(Board board) {
@@ -157,15 +160,15 @@ public class GameAppState extends AbstractAppState {
 
             public void ghostsStartMoving(Board board) {
 //                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-                textWriter.write("Ghosts start moving");
+                textWriter.writeToBuf("Ghosts start moving");
             }
 
             public void playerCanMove(Player player) {
-                textWriter.write("You can move now. Hurry or hide!");
+                textWriter.writeToBuf("You can move now. Hurry or hide!");
             }
 
             public void playerExorcisesGhost(Player p, Board board, int slot) {
-                textWriter.write("That was nasty religious kill! " + " killed a " + board.getSlots()[slot]);
+                textWriter.writeToBuf("That was nasty religious kill! " + " killed a " + board.getSlots()[slot]);
             }
 
             public void stepChanges(TurnState turn, TurnState next) {
@@ -228,7 +231,7 @@ public class GameAppState extends AbstractAppState {
         float y = -(row * height + spacing);
         float z = 0;
 
-        log.debug("Village at [{}] [{}] [{}]", new Object[]{x, y, z});
+        log.trace("Village at [{}] [{}] [{}]", new Object[]{x, y, z});
 
         cardGeom.setLocalTranslation(lt.add(new Vector3f(x, y, z)));
         cardGeom.addControl(new OnMouseGlowControl(cam, inputManager, assetManager, rootNode, ColorRGBA.Red));
@@ -346,11 +349,41 @@ public class GameAppState extends AbstractAppState {
 
         inputManager.addMapping(MAPPING_MAIN_MENU, TRIGGER_MAIN_MENU);
         inputManager.addMapping(MAPPING_START_GAME, TRIGGER_START_GAME);
+        inputManager.addMapping(MAPPING_QUIT_GAME, TRIGGER_QUIT_GAME);
 
-        inputManager.addListener(actionListener,
+        inputManager.addListener( new ActionListener() {
+        public void onAction(String name, boolean isPressed, float tpf) {
+            log.debug("Action happened {}", name);
+            int plNo = 0;
+            if (name.equals(MAPPING_BOARD_1)) {
+                plNo = 1;
+            } else if (name.equals(MAPPING_BOARD_2)) {
+                plNo = 2;
+            } else if (name.equals(MAPPING_BOARD_3)) {
+                plNo = 3;
+            } else if (name.equals(MAPPING_BOARD_4)) {
+                plNo = 4;
+            } else if (name.equals(MAPPING_MAIN_MENU)) {
+                displayMainMenu();
+            } else if (name.equals(MAPPING_START_GAME)) {
+                game.start();
+            } else if (name.equals(MAPPING_QUIT_GAME)) {
+                app.stop();;
+            }
+
+
+//            lookToBoard(plNo);
+            cam.lookAt(getGameboardCenter(), Vector3f.UNIT_XYZ);
+        }
+
+        private void displayMainMenu() {
+
+            textWriter.writeToBuf("M pressed");
+        }
+    },
                 new String[]{
             MAPPING_BOARD_1, MAPPING_BOARD_2,
-            MAPPING_BOARD_3, MAPPING_BOARD_4, MAPPING_MAIN_MENU, MAPPING_START_GAME
+            MAPPING_BOARD_3, MAPPING_BOARD_4, MAPPING_MAIN_MENU, MAPPING_START_GAME, MAPPING_QUIT_GAME
         });
     }
 
@@ -367,53 +400,5 @@ public class GameAppState extends AbstractAppState {
         model.setLocalTranslation(getGameboardCenter());
         rootNode.attachChild(model);
     }
-    private ActionListener actionListener = new ActionListener() {
-        public void onAction(String name, boolean isPressed, float tpf) {
-            log.debug("Action happened {}", name);
-            int plNo = 0;
-            if (name.equals(MAPPING_BOARD_1)) {
-                plNo = 1;
-            } else if (name.equals(MAPPING_BOARD_2)) {
-                plNo = 2;
-            } else if (name.equals(MAPPING_BOARD_3)) {
-                plNo = 3;
-            } else if (name.equals(MAPPING_BOARD_4)) {
-                plNo = 4;
-            } else if (name.equals(MAPPING_MAIN_MENU)) {
-                displayMainMenu();
-            } else if (name.equals(MAPPING_START_GAME)) {
-                game.start();
-            }
-
-
-            lookToBoard(plNo);
-            cam.lookAt(getGameboardCenter(), Vector3f.UNIT_XYZ);
-        }
-
-        private void lookToBoard(int plNo) {
-            // cameras distance from center
-            float dist = 10f;
-            cam.setLocation(startPos);
-            cam.setRotation(Quaternion.ZERO);
-            Vector3f l = cam.getLocation();
-            if (plNo == 1) {
-                l = l.add(0, dist, 0);
-            }
-            if (plNo == 2) {
-                l = l.add(dist, 0, 0);
-            }
-            if (plNo == 3) {
-                l = l.add(0, -dist, 0);
-            }
-            if (plNo == 4) {
-                l = l.add(-dist, 0, 0);
-            }
-            cam.setLocation(l);
-        }
-
-        private void displayMainMenu() {
-
-            textWriter.write("M pressed");
-        }
-    };
+    private ActionListener actionListener; 
 }

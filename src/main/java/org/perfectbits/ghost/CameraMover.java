@@ -60,11 +60,11 @@ public class CameraMover {
     }
 
     private void coordLog() {
-        new Timer("whatever", true).scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                log.debug("current deg:" + currentCamDeg);
-            }
-        }, 0l, 500);
+//        new Timer("whatever", true).scheduleAtFixedRate(new TimerTask() {
+//            @Override
+//            public void run() {
+//                log.debug("current deg:" + currentCamDeg);
+//            }
+//        }, 0l, 500);
     }
 }

@@ -61,8 +61,10 @@ public class GhostsApplication extends SimpleApplication {
             stateManager.attach(new DebugGuiAppState());
 
         inputManager.deleteMapping(INPUT_MAPPING_MEMORY);
-        inputManager.addMapping("Rotate", trigger_rotate);
-        inputManager.addListener(analogListener, new String[]{"Rotate"});
+//        inputManager.addMapping("Rotate", trigger_rotate);
+//        inputManager.addListener(analogListener, new String[]{"Rotate"});
+                inputManager.deleteMapping("FLYCAM_Backward");
+//        inputManager.deleteTrigger("FLYCAM_Backward", new KeyTrigger(KeyInput.KEY_S));
 
         //glow
         FilterPostProcessor fpp = new FilterPostProcessor(assetManager);

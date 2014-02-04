@@ -222,6 +222,7 @@ public class Game {
             this.activeBoard = 0;
             turn.setInitial(false);
         } else {
+            log.debug("Step advances from " + turn + " -> " + turn.nextStep());
             TurnState next = turn.nextStep();
             eventListener.stepChanges(turn, next);
             turn = next;
@@ -270,6 +271,7 @@ public class Game {
                 case NEW_GHOSTS_ENTERS:
                     if (board.isNeutral()) {
                         log.info("Board is neutral, skiping");
+                        advanceOneStep();
                         break;
                     }
 
@@ -279,6 +281,7 @@ public class Game {
                         eventListener.ghostEnters(next);
                         Action entryAction = next.getEntryAction();
                         applyAction(entryAction);
+                        log.debug("Action applied, wait for placement to happen!");
                     } else if (reincarnationIsNotDefeated()) {
                         log.debug("No more cards to draw, reincarnation not defeated");
                         looseGame();
