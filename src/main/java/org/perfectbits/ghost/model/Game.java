@@ -11,6 +11,11 @@ import java.util.Random;
 import org.perfectbits.ghost.model.GhostCard.Action;
 import org.perfectbits.ghost.model.GhostCard.GhostPosition;
 import org.perfectbits.ghost.model.TurnState.Step;
+import static org.perfectbits.ghost.model.TurnState.Step.BUDDA_PLACEMENT;
+import static org.perfectbits.ghost.model.TurnState.Step.GHOSTS_MOVING;
+import static org.perfectbits.ghost.model.TurnState.Step.NEW_GHOSTS_ENTERS;
+import static org.perfectbits.ghost.model.TurnState.Step.PLAYER_ACTION;
+import static org.perfectbits.ghost.model.TurnState.Step.PLAYER_MOVES;
 import org.perfectbits.ghost.model.VillageTile.VillagePower;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +23,6 @@ import org.slf4j.LoggerFactory;
 public class Game {
 
     private static final Logger log = LoggerFactory.getLogger(Game.class);
-    
     private static final int NORTH = 1;
     private static final int EAST = 2;
     private static final int SOUTH = 3;
@@ -34,9 +38,10 @@ public class Game {
     private boolean started = false;
     private boolean lost = false;
     private GameEventListener eventListener;
-    
+    private int activeBoard;
+
     public void start() {
-        
+
         started = true;
         log.debug("Starting Game");
         placeVillageTiles();
@@ -44,125 +49,56 @@ public class Game {
         placePlayerBoards();
         prepareCardDeck(gameDifficulty, numberOfPlayers);
         assignPlayersItems(gameDifficulty, numberOfPlayers);
-        while (!lost) {
-            for (int i = 0; i < 4 && !lost; i++) {
-                nextBoardMove(i);
-            }
-        }
-        log.debug("game over");
+        advanceOneStep();
+
     }
 
     private void nextBoardMove(int i) {
-        log.debug("Player " + i + " starts turn");
-        Board board = boards[i];
+        final String msg = "Player " + i + " starts turn";
+        log.debug(msg);
+        eventListener.playerStartsTurn(i);
         turn = new TurnState();
-        do {
-            Step step = turn.getCurrentStep();
-            log.debug("Current step: " + step);
-            Player player;
-            switch (step) {
-                case BUDDA_PLACEMENT:
-                    if (board.isNeutral()) {
-                        break;
-                    }
-                    Color color = board.getPlayerType();
-                    player = board.getPlayer();
 
-                    // ask user to place budda or skip
-                    break;
-                case GHOSTS_MOVING:
-                    for (GhostSlot slot : board.getSlots()) {
-                        if (slot.hasGhost() && slot.getGhost().isHaunting()) {
-                            GhostPosition pos = slot.getGhost().getPosition();
-                            if (pos == GhostPosition.ON_BOARD2) {
-                                hauntFacingTile(board, slot.getAssignedNumber());
-                            }
-                            slot.getGhost().setPosition(pos.next());
-                        }
-                    }
-
-
-                    break;
-                case NEW_GHOSTS_ENTERS:
-                    if (board.isNeutral()) {
-                        log.info("Board is neutral, skiping");
-                        break;
-                    }
-
-                    if (cards.hasMoreCards()) {
-                        log.debug("Have more cards...");
-                        GhostCard next = cards.drawNextCard();
-                        eventListener.ghostEnters(next);
-                        Action entryAction = next.getEntryAction();
-                        applyAction(entryAction);
-                    }
-                    else if (reincarnationIsNotDefeated()) {
-                        log.debug("No more cards to draw, reincarnation not defeated");
-                        looseGame();
-                    }
-                    
-                    // todo
-                    break;
-                case PLAYER_ACTION:
-                    if (board.isNeutral()) {
-                        break;
-                    }
-                    //todo ask user ask help or exorcise;
-
-                    if (anyExorcismAvailable(board, board.getPlayer())) {
-                        // todo : ask to choose
-                        if (exorcismChoiseAvailable(board, board.getPlayer())) {
-                            // todo ask user what to exorcise
-                        } else {
-                            // auto exorcise;
-                        }
-                    } else {
-                        // ask if player wants to aske help;
-                        askHelp(board.getPlayer());
-                    }
-                    break;
-                case PLAYER_MOVES:
-                    if (board.isNeutral()) {
-                        break;
-                    }
-
-                    // todo
-                    if (board.getPlayer().hasPower(Player.Power.FLY_ANYWHERE)) {
-                        // let choose anything
-                    } else {
-                        // let choose neighbour non diagonal tiles
-                    }
-                    break;
-                default:
-                    break;
-
-            }
-            turn = turn.nextStep();
-        } while (turn.hasMoreSteps() && !lost);
     }
 
-    private void askHelp(Player player) {
+    public void playerDecidesIfHeWantsToMove(Player player) {
+        eventListener.playerCanMove(player);
+    }
+
+    public void playerDecidesIfHeWantsToAskForHelp(Player player) {
+        int pos = player.getTilePosition();
+        VillageTile village = villageTiles[pos];
+        eventListener.playCanAskForHelp(player, village);
+    }
+
+    public void askHelp(Player player) {
         int pos = player.getTilePosition();
         VillageTile village = villageTiles[pos];
         VillagePower pow = village.getPower();
-
+        eventListener.playerAsksForHelpFromVillager(player, village);
+        advanceOneStep();
     }
 
-    private boolean anyExorcismAvailable(Board board, Player player) {
-        // TODO Auto-generated method stub
+    public void exorcice(Player p, Board board, int slot) {
+        eventListener.playerExorcisesGhost(p, board, slot);
+        advanceOneStep();
+    }
+
+    public boolean anyExorcismAvailable(Board board, Player player) {
+        log.warn("anyExorcismAvailable: not implemented");
         return false;
     }
 
-    private boolean exorcismChoiseAvailable(Board board, Player player) {
-        // TODO Auto-generated method stub
+    public boolean exorcismChoiseAvailable(Board board, Player player) {
+        log.warn("exorcismChoiseAvailable: not implemented");
         return false;
     }
 
-    private void applyAction(Action entryAction) {
-        // TODO Auto-generated method stub
+    public void applyAction(Action entryAction) {
+        log.warn("applyAction: not implemented");
     }
 
-    private void hauntFacingTile(Board board, int i) {
+    public void hauntFacingTile(Board board, int i) {
         int facingTileNo = 0;
         switch (board.getAssignedPosition()) {
             case NORTH:
@@ -177,6 +113,7 @@ public class Game {
                 facingTileNo = 1 + (i - 1) * 3;
                 break;
         }
+        eventListener.villageBecomesHaunted(villageTiles[facingTileNo], facingTileNo);
         villageTiles[facingTileNo].setHaunted(true);
     }
 
@@ -220,23 +157,23 @@ public class Game {
     private void placePlayerBoards() {
         List<Board> boardsShuffled = new ArrayList<Board>();
         Board b;
-        
+
         b = Board.build(Color.GREEN, flipACoin());
         b.setPlayer(players.get(Color.GREEN));
         boardsShuffled.add(b);
-        
+
         b = Board.build(Color.RED, flipACoin());
         b.setPlayer(players.get(Color.RED));
         boardsShuffled.add(b);
-        
+
         b = Board.build(Color.BLUE, flipACoin());
         b.setPlayer(players.get(Color.BLUE));
         boardsShuffled.add(b);
-        
+
         b = Board.build(Color.YELLOW, flipACoin());
         b.setPlayer(players.get(Color.YELLOW));
         boardsShuffled.add(b);
-        
+
         Collections.shuffle(boardsShuffled);
         for (int i = 0; i < 4; i++) {
             boards[i] = boardsShuffled.get(i);
@@ -276,5 +213,159 @@ public class Game {
 
     public void setEventListener(GameEventListener gameEventListener) {
         this.eventListener = gameEventListener;
+    }
+
+    private void advanceOneStep() {
+
+        if (turn.isInitial()) {
+            log.debug("Initial move, choosing board 0");
+            this.activeBoard = 0;
+            turn.setInitial(false);
+        } else {
+            TurnState next = turn.nextStep();
+            eventListener.stepChanges(turn, next);
+            turn = next;
+//            } while (turn.hasMoreSteps() && !lost);
+        }
+
+        if (turn.hasMoreSteps() == false) {
+            log.debug("No more steps for board " + activeBoard);
+            this.activeBoard = ++this.activeBoard % 3;
+            eventListener.turnGoesToNewBoard(this.activeBoard);
+            checkGameOver();
+            nextBoardMove(activeBoard);
+        } else {
+            log.debug("Board " + activeBoard + " advances further");
+            Board board = boards[activeBoard];
+//            do {
+            Step step = turn.getCurrentStep();
+            log.debug("Current step: " + step);
+            Player player;
+            switch (step) {
+                case BUDDA_PLACEMENT:
+                    if (board.isNeutral()) {
+                        break;
+                    }
+                    Color color = board.getPlayerType();
+                    player = board.getPlayer();
+
+                    eventListener.userCanPlaceBuddah(board, player);
+                    // ask user to place budda or skip
+                    break;
+                case GHOSTS_MOVING:
+                    eventListener.ghostsStartMoving(board);
+                    for (GhostSlot slot : board.getSlots()) {
+                        if (slot.hasGhost() && slot.getGhost().isHaunting()) {
+                            GhostPosition pos = slot.getGhost().getPosition();
+                            if (pos == GhostPosition.ON_BOARD2) {
+                                hauntFacingTile(board, slot.getAssignedNumber());
+                            }
+                            eventListener.ghostMoves(pos, pos.next());
+                            slot.getGhost().setPosition(pos.next());
+                        }
+                    }
+                    advanceOneStep();
+
+                    break;
+                case NEW_GHOSTS_ENTERS:
+                    if (board.isNeutral()) {
+                        log.info("Board is neutral, skiping");
+                        break;
+                    }
+
+                    if (cards.hasMoreCards()) {
+                        log.debug("Have more cards...");
+                        GhostCard next = cards.drawNextCard();
+                        eventListener.ghostEnters(next);
+                        Action entryAction = next.getEntryAction();
+                        applyAction(entryAction);
+                    } else if (reincarnationIsNotDefeated()) {
+                        log.debug("No more cards to draw, reincarnation not defeated");
+                        looseGame();
+                    }
+
+                    // todo
+                    break;
+                case PLAYER_ACTION:
+                    if (board.isNeutral()) {
+                        break;
+                    }
+                    //todo ask user ask help or exorcise;
+
+                    if (anyExorcismAvailable(board, board.getPlayer())) {
+                        // todo : ask to choose
+                        if (exorcismChoiseAvailable(board, board.getPlayer())) {
+                            eventListener.exorcismChoiseAvailable(board, board.getPlayer());
+                        } else {
+                            // auto exorcise;
+                        }
+                    } else {
+                        // ask if player wants to aske help;
+                        playerDecidesIfHeWantsToAskForHelp(board.getPlayer());
+                    }
+                    break;
+                case PLAYER_MOVES:
+                    if (board.isNeutral()) {
+                        break;
+                    }
+
+                    eventListener.playerCanChooseToMove(board);
+                    // todo
+                    if (board.getPlayer().hasPower(Player.Power.FLY_ANYWHERE)) {
+                    } else {
+                        // let choose neighbour non diagonal tiles
+                    }
+                    break;
+                default:
+                    break;
+
+            }
+//                turn = turn.nextStep();
+//            } while (turn.hasMoreSteps() && !lost);
+
+        }
+
+    }
+
+    private void checkGameOver() {
+        if (lost) {
+            looseGame();
+        }
+    }
+
+    public int getNumberOfPlayers() {
+        return numberOfPlayers;
+    }
+
+    public Board[] getBoards() {
+        return boards;
+    }
+
+    public Random getRnd() {
+        return rnd;
+    }
+
+    public TurnState getTurn() {
+        return turn;
+    }
+
+    public VillageTile[] getVillageTiles() {
+        return villageTiles;
+    }
+
+    public Map<Color, Player> getPlayers() {
+        return players;
+    }
+
+    public PileOfCards getCards() {
+        return cards;
+    }
+
+    public boolean isLost() {
+        return lost;
+    }
+
+    public int getActiveBoard() {
+        return activeBoard;
     }
 }

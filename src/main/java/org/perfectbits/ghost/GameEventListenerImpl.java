@@ -4,12 +4,16 @@
  */
 package org.perfectbits.ghost;
 
+import org.perfectbits.ghost.model.Game;
 import org.perfectbits.ghost.model.GameEventListener;
-import org.perfectbits.ghost.model.GhostCard;
 
 /**
  *
  * @author congo
  */
 public abstract class GameEventListenerImpl implements GameEventListener {
+    private final Game game;
+    public GameEventListenerImpl(Game g) {
+        this.game = g;
+    }
 }

@@ -43,11 +43,7 @@ public class GhostCardImageControl extends AbstractControl {
     protected void controlUpdate(float tpf) {
         if (!active)
             return;
-        
-        log.debug("tpf: {}", tpf);
-        System.out.println(tpf);
         curDeg += degPerSec * tpf;
-        System.out.println(curDeg);
         if (curDeg <= endDeg) 
         {
             Quaternion q = getSpatial().getLocalRotation();

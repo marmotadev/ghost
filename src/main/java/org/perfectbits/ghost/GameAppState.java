@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.perfectbits.ghost;
 
 import com.jme3.animation.AnimChannel;
@@ -34,8 +30,12 @@ import com.jme3.texture.Texture;
 import de.lessvoid.nifty.Nifty;
 import java.util.ArrayList;
 import java.util.List;
+import org.perfectbits.ghost.model.Board;
 import org.perfectbits.ghost.model.Game;
 import org.perfectbits.ghost.model.GhostCard;
+import org.perfectbits.ghost.model.Player;
+import org.perfectbits.ghost.model.TurnState;
+import org.perfectbits.ghost.model.VillageTile;
 import org.perfectbits.ghost.view.screens.MyStartScreen;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +45,8 @@ import org.slf4j.LoggerFactory;
  * @author congo
  */
 public class GameAppState extends AbstractAppState {
+    
+    private static final Logger log = LoggerFactory.getLogger(GameAppState.class);
     
     public static Vector3f startPos = new Vector3f(2, 2, -20);
     public static float VILLAGE_CARD_SIZE = 1.5f;
@@ -62,7 +64,7 @@ public class GameAppState extends AbstractAppState {
     private final static Trigger TRIGGER_MAIN_MENU = new KeyTrigger(KeyInput.KEY_M);
     private final static Trigger TRIGGER_START_GAME = new KeyTrigger(KeyInput.KEY_S);
 
-    Logger log = LoggerFactory.getLogger(GameAppState.class);
+    private boolean moveCameraAround = false;
     private GhostsApplication app;
     private Node rootNode;
     private CameraMover cameraMover;
@@ -98,20 +100,76 @@ public class GameAppState extends AbstractAppState {
         this.cameraMover = new CameraMover(cam, getGameboardCenter(), startPos);
         this.ghostImage = new GhostImage(assetManager, settings, rootNode, "Interface/butka.jpg", startPos);
 
-        cam.setLocation(cam.getLocation().add(-2, -7, -28));
+        cam.setLocation(cam.getLocation().add(-3, -7, -23));
         cam.lookAt(getGameboardCenter(), Vector3f.UNIT_XYZ);
         placeGameArtifacts(rootNode);
         registerKeyboardMappings();
 
         //game
         this.game = new Game();
-        this.game.setEventListener(new GameEventListenerImpl() {
+        this.game.setEventListener(new GameEventListenerImpl(game) {
             public void ghostEnters(GhostCard next) {
                 ghostImage.display();
                 textWriter.write("Be afraid! New ghost arrives: " + next.getName());
             }
 
             public void lostGame() {
+                textWriter.write("Game Over");
+            }
+
+            public void playerStartsTurn(int i) {
+                textWriter.write("Player " + i + " starts turn" );
+//                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            }
+
+            public void villageBecomesHaunted(VillageTile villageTile, int facingTileNo) {
+                textWriter.write("Village " + villageTile + " becomes haunted" );
+            }
+
+            public void ghostMoves(GhostCard.GhostPosition pos, GhostCard.GhostPosition next) {
+                textWriter.write("Ghost moves from " + pos + " to " + next);
+            }
+
+            public void exorcismChoiseAvailable(Board board, Player player) {
+                textWriter.write("Choose which ghost to exorcise");
+            }
+
+            public void playCanAskForHelp(Player player, VillageTile village) {
+                textWriter.write("Player can ask for help");
+            }
+
+            public void playerCanChooseToMove(Board board) {
+                playerCanMove(board.getPlayer());
+                   
+            }
+
+            public void playerAsksForHelpFromVillager(Player player, VillageTile village) {
+//                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            }
+
+            public void turnGoesToNewBoard(int activeBoard) {
+//                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            }
+
+            public void userCanPlaceBuddah(Board board, Player player) {
+//                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            }
+
+            public void ghostsStartMoving(Board board) {
+//                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                textWriter.write("Ghosts start moving");
+            }
+
+            public void playerCanMove(Player player) {
+                textWriter.write("You can move now. Hurry or hide!");
+            }
+
+            public void playerExorcisesGhost(Player p, Board board, int slot) {
+                textWriter.write("That was nasty religious kill! " + " killed a " + board.getSlots()[slot]);
+            }
+
+            public void stepChanges(TurnState turn, TurnState next) {
+                log.debug("turn " + turn + " -> " + next);
             }
         });
 
@@ -125,8 +183,8 @@ public class GameAppState extends AbstractAppState {
     @Override
     public void update(float tpf) {
         super.update(tpf); //To change body of generated methods, choose Tools | Templates.
-        moveCameraAroundBoard(tpf);
-//        checkForCollision(null);
+        if (moveCameraAround)
+            moveCameraAroundBoard(tpf);
     }
 
     @Override
