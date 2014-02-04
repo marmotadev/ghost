@@ -2,15 +2,13 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package mygame;
+package org.perfectbits.ghost;
 
 import com.jme3.math.FastMath;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.Camera;
 import java.util.Timer;
 import java.util.TimerTask;
-import static mygame.Main.MAPPING_BOARD_1;
-import static mygame.Main.startPos;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,10 +26,12 @@ public class CameraMover {
     private float currentCamDeg = 0;
     private final Camera camera;
     private final Vector3f focusPoint;
+    private final Vector3f startPos;
 
-    public CameraMover(Camera cam, Vector3f focalPoint) {
+    public CameraMover(Camera cam, Vector3f focalPoint, Vector3f startPoint) {
         this.camera = cam;
         this.focusPoint = focalPoint;
+        this.startPos = startPoint;
         coordLog();
     }
 
@@ -60,7 +60,7 @@ public class CameraMover {
     }
 
     private void coordLog() {
-        new Timer(MAPPING_BOARD_1, true).scheduleAtFixedRate(new TimerTask() {
+        new Timer("whatever", true).scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
                 log.debug("current deg:" + currentCamDeg);

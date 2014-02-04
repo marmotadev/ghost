@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+
 import org.perfectbits.ghost.model.GhostCard.Action;
 import org.perfectbits.ghost.model.GhostCard.GhostPosition;
 import org.perfectbits.ghost.model.TurnState.Step;
@@ -32,9 +33,12 @@ public class Game {
     private PileOfCards cards = new PileOfCards();
     private boolean started = false;
     private boolean lost = false;
+    private GameEventListener eventListener;
+    
     public void start() {
+        
         started = true;
-        log.debug("Game started");
+        log.debug("Starting Game");
         placeVillageTiles();
         initializePlayers();
         placePlayerBoards();
@@ -81,16 +85,19 @@ public class Game {
                     break;
                 case NEW_GHOSTS_ENTERS:
                     if (board.isNeutral()) {
+                        log.info("Board is neutral, skiping");
                         break;
                     }
 
                     if (cards.hasMoreCards()) {
+                        log.debug("Have more cards...");
                         GhostCard next = cards.drawNextCard();
+                        eventListener.ghostEnters(next);
                         Action entryAction = next.getEntryAction();
                         applyAction(entryAction);
-                        placeGhost(next);
                     }
                     else if (reincarnationIsNotDefeated()) {
+                        log.debug("No more cards to draw, reincarnation not defeated");
                         looseGame();
                     }
                     
@@ -248,7 +255,7 @@ public class Game {
 
     private void looseGame() {
         lost = true;
-        log.warn("looseGame: Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        eventListener.lostGame();
     }
 
     private boolean reincarnationIsNotDefeated() {
@@ -265,5 +272,9 @@ public class Game {
 
     private void placeGhost(GhostCard next) {
         log.warn(" placeGhost Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    public void setEventListener(GameEventListener gameEventListener) {
+        this.eventListener = gameEventListener;
     }
 }
