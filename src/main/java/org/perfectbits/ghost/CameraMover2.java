@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.perfectbits.ghost;
 
 import com.jme3.math.FastMath;
@@ -15,9 +11,9 @@ import org.slf4j.LoggerFactory;
  *
  * @author congo
  */
-public class CameraMover {
+public class CameraMover2 {
 
-    private static final Logger log = LoggerFactory.getLogger(CameraMover.class);
+    private static final Logger log = LoggerFactory.getLogger(CameraMover2.class);
     
     final float speed = 0.1f;
     final float full = 360;
@@ -27,11 +23,13 @@ public class CameraMover {
     private final Vector3f focusPoint;
     private final Vector3f startPos;
 
-    public CameraMover(Camera cam, Vector3f focalPoint, Vector3f startPoint) {
+    public CameraMover2(Camera cam, Vector3f focalPoint, Vector3f startPoint, Vector3f axis) {
         this.camera = cam;
         this.focusPoint = focalPoint;
         this.startPos = focusPoint;
         coordLog();
+        
+        
     }
 
     private Vector3f getNewCameraPos(float tpf) {
@@ -50,9 +48,8 @@ public class CameraMover {
     public void move(float tpf) {
         final Vector3f v = getNewCameraPos(tpf);
         camera.setLocation(v);
-        camera.lookAt(focusPoint, Vector3f.UNIT_XYZ);
-        camera.setParallelProjection(true);
-        camera.getUp();
+        camera.lookAt(focusPoint, camera.getUp());
+
     }
 
     private void normalizeDegreeses() {

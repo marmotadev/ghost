@@ -8,6 +8,7 @@ import com.jme3.app.state.AppStateManager;
 import com.jme3.asset.AssetManager;
 import com.jme3.audio.AudioRenderer;
 import com.jme3.font.BitmapFont;
+import com.jme3.input.ChaseCamera;
 import com.jme3.input.InputManager;
 import com.jme3.input.KeyInput;
 import com.jme3.input.controls.ActionListener;
@@ -48,7 +49,7 @@ public class GameAppState extends AbstractAppState {
     
     private static final Logger log = LoggerFactory.getLogger(GameAppState.class);
     
-    public static Vector3f startPos = new Vector3f(2, 2, -20);
+    public static Vector3f startPos = new Vector3f(0, 0, 0);
     public static float VILLAGE_CARD_SIZE = 1.5f;
     public static final String MAPPING_BOARD_1 = "Board 1";
     public static final String MAPPING_BOARD_2 = "Board 2";
@@ -82,6 +83,8 @@ public class GameAppState extends AbstractAppState {
     private ViewPort guiViewPort;
     private AppSettings settings;
     private AppStateManager stateManager;
+    private Geometry centerTile;
+    private ChaseCamera camc;
 
     @Override
     public void initialize(AppStateManager stateManager, Application app) {
@@ -100,12 +103,16 @@ public class GameAppState extends AbstractAppState {
         this.stateManager = this.app.getStateManager();
 
         this.cameraMover = new CameraMover(cam, getGameboardCenter(), startPos);
-        this.ghostImage = new GhostImage(assetManager, settings, rootNode, "Interface/butka.jpg", startPos);
+        this.ghostImage = new GhostImage(assetManager, settings, guiNode, rootNode, "Interface/butka.jpg", getGameboardCenter(), cam, inputManager);
+        this.ghostImage.addControl(new OnMouseGlowControlGui(cam, inputManager, assetManager, guiNode, ColorRGBA.Magenta));
+        this.ghostImage.addControl(new ObjectPickControl(cam, inputManager, assetManager, guiNode, ColorRGBA.Magenta, this.ghostImage));
+        
 
-        cam.setLocation(cam.getLocation().add(-3, -7, -23));
-        cam.lookAt(getGameboardCenter(), Vector3f.UNIT_XYZ);
+        
+//        cam.setLocation(cam.getLocation().add(0, 0, 30));
+//        cam.lookAt(getGameboardCenter(), Vector3f.UNIT_Y);
         placeGameArtifacts(rootNode);
-
+        this.camc = new ChaseCamera(cam, centerTile, inputManager);
         registerKeyboardMappings();
         
         //game
@@ -197,7 +204,7 @@ public class GameAppState extends AbstractAppState {
 
     private Geometry buildCard() {
         Box card = new Box(1, 1.5f, 0.02f);
-        Geometry cardGeom = new Geometry("Card", card);
+        Geometry cardGeom = new Geometry("Cardf", card);
         Material cardMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         cardMat.setColor("Color", ColorRGBA.White);
         Texture cube1Tex = assetManager.loadTexture(
@@ -216,7 +223,7 @@ public class GameAppState extends AbstractAppState {
         height = 1.5f;
         depth = 0.02f;
         Box card = new Box(width * 0.5f, height * 0.5f, depth * 0.5f);
-        Geometry cardGeom = new Geometry("Card", card);
+        Geometry cardGeom = new Geometry("Card-"+row+"-"+col, card);
         Material cardMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         cardMat.setColor("Color", ColorRGBA.White);
         Texture cube1Tex = assetManager.loadTexture(
@@ -242,7 +249,11 @@ public class GameAppState extends AbstractAppState {
         List<Geometry> villageCards = new ArrayList<Geometry>();
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                rootNode.attachChild(buildVillageCard(i, j));
+                final Geometry vc = buildVillageCard(i, j);
+                if (i == 1 && j == 1)
+                        this.centerTile = vc;
+                rootNode.attachChild(vc);
+                
             }
         }
         placePlayerCards(rootNode);

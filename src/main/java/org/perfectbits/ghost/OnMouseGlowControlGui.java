@@ -6,7 +6,6 @@ package org.perfectbits.ghost;
 
 import com.jme3.asset.AssetManager;
 import com.jme3.asset.TextureKey;
-import com.jme3.collision.CollisionResult;
 import com.jme3.collision.CollisionResults;
 import com.jme3.export.JmeExporter;
 import com.jme3.export.JmeImporter;
@@ -33,9 +32,9 @@ import org.slf4j.LoggerFactory;
  *
  * @author congo
  */
-class OnMouseGlowControl implements Control {
+class OnMouseGlowControlGui implements Control {
 
-    Logger log = LoggerFactory.getLogger(OnMouseGlowControl.class);
+    Logger log = LoggerFactory.getLogger(OnMouseGlowControlGui.class);
     Spatial model;
     private final Camera cam;
     private final InputManager inputManager;
@@ -44,7 +43,7 @@ class OnMouseGlowControl implements Control {
     private Material orig;
     private final ColorRGBA color;
 
-    public OnMouseGlowControl(Camera cam, InputManager inputManager, AssetManager assetManager, Node rootNode, ColorRGBA color) {
+    public OnMouseGlowControlGui(Camera cam, InputManager inputManager, AssetManager assetManager, Node rootNode, ColorRGBA color) {
         this.cam = cam;
         this.inputManager = inputManager;
         this.assetManager = assetManager;
@@ -52,7 +51,7 @@ class OnMouseGlowControl implements Control {
         this.color = color;
     }
 
-    OnMouseGlowControl(Camera cam, InputManager inputManager, AssetManager assetManager, Node rootNode) {
+    OnMouseGlowControlGui(Camera cam, InputManager inputManager, AssetManager assetManager, Node rootNode) {
         this(cam, inputManager, assetManager, rootNode, ColorRGBA.Blue);
     }
 
@@ -71,23 +70,27 @@ class OnMouseGlowControl implements Control {
         // Reset results list.
         CollisionResults results = new CollisionResults();
         // Convert screen click to 3d position
-        Vector2f click2d = inputManager.getCursorPosition();
-        Vector3f click3d = cam.getWorldCoordinates(
-                new Vector2f(click2d.getX(), click2d.getY()), 0f);
-        Vector3f dir = cam.getWorldCoordinates(
-                new Vector2f(click2d.getX(), click2d.getY()), 1f).subtractLocal(click3d);
-        // Aim the ray from the clicked spot forwards.
-        Ray ray = new Ray(click3d, dir);
+
+        Vector3f ori = new Vector3f(inputManager.getCursorPosition().x, inputManager.getCursorPosition().y, 1f);
+        Vector3f dest = new Vector3f(0f, 0f, -1f);
+        Ray ray = new Ray(ori, dest);
+
+//        Vector2f click2d = inputManager.getCursorPosition();
+//        Vector3f click3d = cam.getWorldCoordinates(
+//                new Vector2f(click2d.getX(), click2d.getY()), 0f);
+//        Vector3f dir = cam.getWorldCoordinates(
+//                new Vector2f(click2d.getX(), click2d.getY()), 1f).subtractLocal(click3d);
+//        // Aim the ray from the clicked spot forwards.
+//        Ray ray = new Ray(click3d, dir);
         // Collect intersections between ray and all nodes in results list.
         model.collideWith(ray, results);
 
         // Use the results -- we rotate the selected geometry.
         if (results.size() > 0) {
-            final CollisionResult collision = results.getClosestCollision();
 
 
             // The closest result is the target that the player picked:
-            Geometry target = collision.getGeometry();
+            Geometry target = results.getClosestCollision().getGeometry();
             final Material m = target.getMaterial();
             if (orig == null) {
                 orig = m;
@@ -96,12 +99,12 @@ class OnMouseGlowControl implements Control {
 //            target.g
 //            if (target.getName().equals(model.getName())) {
             if (true) {
-                for (MatParam p : m.getParams()) {
-                    try {
-                        log.debug("param: {}", p);
-                    } catch (Exception e) {
-                    }
-                }
+//                for (MatParam p : m.getParams()) {
+//                    try {
+//                        log.debug("param: {}", p);
+//                    } catch (Exception e) {
+//                    }
+//                }
 //                Texture cube1Tex = assetManager.loadTexture(
 //                "Interface/butka.jpg");
 //                cube1Tex.setWrap(Texture.WrapMode.MirroredRepeat);
@@ -124,7 +127,7 @@ class OnMouseGlowControl implements Control {
                 ambient.setColor(color);
                 mainNode.addLight(ambient);
 
-                log.debug("Colision with {}", target.getName());
+                log.trace("Colision with {}", target.getName());
             }
         } else {
             if (orig != null) {
