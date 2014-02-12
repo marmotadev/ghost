@@ -48,12 +48,7 @@ class DebugGuiAppState extends AbstractAppState {
     }
 
     private Geometry attachGrid(Vector3f pos, int size, ColorRGBA color) {
-        Geometry g = new Geometry("wireframe grid", new Grid(size, size, 1));
-        Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        mat.getAdditionalRenderState().setWireframe(true);
-        mat.setColor("Color", color);
-        g.setMaterial(mat);
-        g.center().move(pos);
+        Geometry g = buildGrid(size, color, pos);
         rootNode.attachChild(g);
         return g;
     }
@@ -89,6 +84,26 @@ class DebugGuiAppState extends AbstractAppState {
         mat.setColor("Color", color);
         g.setMaterial(mat);
         rootNode.attachChild(g);
+        return g;
+    }
+
+    private Geometry buildGrid(int size, ColorRGBA color, Vector3f pos) {
+        Geometry g = new Geometry("wireframe grid", new Grid(size, size, 1));
+        Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        mat.getAdditionalRenderState().setWireframe(true);
+        mat.setColor("Color", color);
+        g.setMaterial(mat);
+        g.center().move(pos);
+        return g;
+    }
+    public static Geometry buildGrid(AssetManager assetManager, int size, Vector3f pos, float lineDist) {
+        ColorRGBA color = ColorRGBA.randomColor();
+        Geometry g = new Geometry("wireframe grid", new Grid(size, size, lineDist));
+        Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        mat.getAdditionalRenderState().setWireframe(true);
+        mat.setColor("Color", color);
+        g.setMaterial(mat);
+        g.center().move(pos);
         return g;
     }
 }

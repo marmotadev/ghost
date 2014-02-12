@@ -137,7 +137,8 @@ class GhostImage {
         pickedUpCard.setLocalTranslation(startpos);
         n1 = new Node();
         rootNode.attachChild(n1);
-        moveToCursor();
+        float z = moveToCursor();
+        addGridOnProjectedPlane(z);
 
 //        rootNode.attachChild(pickedUpCard);
     }
@@ -194,7 +195,7 @@ class GhostImage {
 //        rootNode.attachChild(n1);
 //        
 //    }
-    void moveToCursor() {
+    float moveToCursor() {
         Vector2f click2d = inputManager.getCursorPosition();
         Vector3f boardNormal = Vector3f.UNIT_Z;
         
@@ -209,6 +210,7 @@ class GhostImage {
         log.debug("Angle: " + angl * FastMath.RAD_TO_DEG);
         final float zProj = cam.getViewToProjectionZ(10);
         Vector3f click3d = cam.getWorldCoordinates(new Vector2f(click2d.getX(), click2d.getY()), zProj);
+        
         
         Vector3f screenWorldPos = cam.getWorldCoordinates(new Vector2f(0, 0), zProj);
         log.debug("Screen start " + screenWorldPos);
@@ -236,5 +238,22 @@ class GhostImage {
 //                n1.setLocalRotation(qrot);
                 pickedUpCard.setLocalTranslation(rotatedProjected);
         rootNode.attachChild(pickedUpCard);
+        return zProj;
+    }
+
+    private void addGridOnProjectedPlane(float zProj) {
+        Vector3f x00 = cam.getWorldCoordinates(Vector2f.ZERO, zProj);
+        Vector3f x01 = cam.getWorldCoordinates(new Vector2f(0, settings.getHeight()), zProj);
+        Vector3f x10 = cam.getWorldCoordinates(new Vector2f(settings.getWidth(), 0), zProj);
+        Vector3f x11 = cam.getWorldCoordinates(new Vector2f(settings.getWidth(), settings.getHeight()), zProj);
+        Vector3f centerPoint = cam.getWorldCoordinates(new Vector2f(settings.getWidth()/2, settings.getHeight()/2), zProj);
+        int size = 10;
+        Geometry grid;
+        Vector3f lenv = x10.subtract(x00);
+        float dist= lenv.length() / size;;
+        grid = DebugGuiAppState.buildGrid(assetManager, size, centerPoint, dist);
+        grid.setLocalRotation(cam.getRotation());
+        rootNode.attachChild(grid);
+        
     }
 }
